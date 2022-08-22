@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import print_function
 
 import tf
@@ -6,7 +6,7 @@ import sys
 import rospy
 import copy
 import math
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Quaternion
 from std_msgs.msg import String
 from kinova_arm_apps.full_arm_movement import FullArmMovement
 
@@ -16,8 +16,8 @@ class PickAndPlace(object):
 
     def __init__(self):
         self.fam = FullArmMovement()
-	self.boundary_safety = rospy.get_param("~boundary_safety", None)
-	self.joint_angles = rospy.get_param("~joint_angles", None)
+        self.boundary_safety = rospy.get_param("~boundary_safety", None)
+        self.joint_angles = rospy.get_param("~joint_angles", None)
         if self.boundary_safety is None or self.joint_angles is None:
             rospy.logerr("Joint angles or boundary_safety not defined.")
             sys.exit(1)
@@ -32,14 +32,19 @@ class PickAndPlace(object):
         # Subscribers
         self.perception_pose_sub = rospy.Subscriber('~pose_in', PoseStamped, self.perception_pose_cb)
         self.event_in_sub = rospy.Subscriber('~event_in', String, self.event_in_cb)
+        self.event_out_pub = rospy.Publisher('~event_out', String, queue_size=1)
         self.debug_pose_pub = rospy.Publisher('~debug_pose', PoseStamped, queue_size=1)
 
         self.setup_arm_for_pick()
-	rospy.loginfo("READY!")
+        rospy.loginfo("READY!")
 
     def perception_pose_cb(self, msg):
         msg = self.get_transformed_pose(msg, 'base_link')
-        rospy.loginfo(msg.pose.position)
+        rospy.loginfo(msg.pose)
+        roll, pitch, yaw = tf.transformations.euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
+        q = list(tf.transformations.quaternion_from_euler(0, 0, yaw))
+        msg.pose.orientation = Quaternion(*q)
+        rospy.loginfo(msg.pose)
         print(self.boundary_safety)
         print(self.boundary_safety["x_min"] < msg.pose.position.x < self.boundary_safety["x_max"])
         print(self.boundary_safety["y_min"] < msg.pose.position.y < self.boundary_safety["y_max"])
@@ -52,16 +57,22 @@ class PickAndPlace(object):
             rospy.logerr("Input pose out of bound")
 
     def event_in_cb(self, msg):
+        print ("Received message ", msg.data)
         if msg.data == 'e_demo':
-	    self.fam.test_send_joint_angles(self.joint_angles["perceive_pose"])
-	    self.fam.test_send_joint_angles(self.joint_angles["demo_pose"])
-	    rospy.sleep(2)
+            #self.fam.test_send_joint_angles(self.joint_angles["perceive_right_pose"])
+            self.fam.test_send_joint_angles(self.joint_angles["demo_pose"])
+            rospy.sleep(2)
 
-        if msg.data == 'e_perceive':
-	    self.fam.test_send_joint_angles(self.joint_angles["perceive_pose"])
-	
-        if msg.data == 'e_start':
+        if msg.data == 'e_perceive_right':
+            self.fam.test_send_joint_angles(self.joint_angles["perceive_right_pose"])
+        
+        if msg.data == 'e_perceive_left':
+            self.fam.test_send_joint_angles(self.joint_angles["perceive_left_pose"])
+
+        if msg.data == 'e_pick_right' or msg.data == 'e_pick_left':
             if self.perception_pose is None:
+                #Send back feedback 
+                self.event_out_pub.publish('e_done')
                 return
             print(self.fam.current_ee_pose)
             debug_pose = copy.deepcopy(self.perception_pose)
@@ -83,15 +94,24 @@ class PickAndPlace(object):
             self.debug_pose_pub.publish(debug_pose)
             self.fam.send_cartesian_pose(debug_pose)
             self.fam.close_gripper()
-            self.fam.test_send_joint_angles(self.joint_angles["perceive_pose"])
-            self.fam.test_send_joint_angles(self.joint_angles["intermediate_place_pose"])
-            self.fam.test_send_joint_angles(self.joint_angles["place_pose"])
-            self.fam.open_gripper()
-            self.fam.test_send_joint_angles(self.joint_angles["intermediate_place_pose"])
-            self.fam.test_send_joint_angles(self.joint_angles["perceive_pose"])
-            self.perception_pose = None
+            if msg.data == 'e_pick_right':
+                self.fam.test_send_joint_angles(self.joint_angles["perceive_right_pose"])
+                self.fam.test_send_joint_angles(self.joint_angles["intermediate_place_pose_left"])
+                self.fam.test_send_joint_angles(self.joint_angles["place_pose_left"])
+                self.fam.open_gripper()
+                self.perception_pose = None
+            elif msg.data == 'e_pick_left':
+                self.fam.test_send_joint_angles(self.joint_angles["perceive_left_pose"])
+                self.fam.test_send_joint_angles(self.joint_angles["intermediate_place_pose_right"])
+                self.fam.test_send_joint_angles(self.joint_angles["place_pose_right"])
+                self.fam.open_gripper()
+                self.perception_pose = None
         if msg.data == 'e_stop':
             self.perception_pose = None
+
+        #Send back feedback 
+        self.event_out_pub.publish('e_done')
+
 
     def setup_arm_for_pick(self):
         """Setup the arm to go to pick pose
@@ -101,7 +121,7 @@ class PickAndPlace(object):
         self.fam.example_clear_faults()
         self.fam.start_action_topic()
         # self.fam.test_send_joint_angles(self.joint_angles["vertical_pose"])
-        self.fam.test_send_joint_angles(self.joint_angles["perceive_pose"])
+        self.fam.test_send_joint_angles(self.joint_angles["perceive_right_pose"])
         self.fam.open_gripper()
 
     def get_transformed_pose(self, reference_pose, target_frame):
@@ -150,7 +170,7 @@ class PickAndPlace(object):
 
             return transformed_pose
 
-        except tf.Exception, error:
+        except tf.Exception as error:
             rospy.logwarn("Exception occurred: {0}".format(error))
             return None
 

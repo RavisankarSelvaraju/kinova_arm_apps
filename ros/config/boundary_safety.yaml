@@ -1,7 +1,10 @@
+# the measurements are in base link of kinova arm
+# in meters
+# 
 boundary_safety:
     x_min: 0.3
-    x_max: 0.6
-    y_min: -0.5
-    y_max: -0.05
+    x_max: 0.5
+    y_min: -0.3
+    y_max: 0.3
     z_min: 0.005
     z_max: 0.1

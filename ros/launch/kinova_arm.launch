@@ -6,7 +6,7 @@
 
   <include file="$(find kortex_driver)/launch/kortex_driver.launch">
     <!-- Kortex API options -->
-    <arg name="ip_address" value="192.168.1.10"/>
+    <arg name="ip_address" value="192.168.1.12"/>
     <arg name="start_rviz" value="true"/>
     <arg name="start_moveit" value="false"/>
   </include>

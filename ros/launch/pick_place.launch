@@ -5,9 +5,9 @@
     <arg name="ip_address" default="192.168.1.10"/>
     <arg name="__ns" default="/my_gen3"/>
     
-    <include file="$(find kortex_driver)/launch/kortex_driver.launch"> 
-        <arg name="ip_address" value="$(arg ip_address)"/>
-    </include>
+    <!-- include file="$(find kortex_driver)/launch/kortex_driver.launch" --> 
+        <!--arg name="ip_address" value="$(arg ip_address)"/ -->
+    <!--/include -->
 
     <!--node pkg="timed_roslaunch" type="timed_roslaunch.sh" args="5 kinova_arm_apps kinova_moveit_client.launch __ns:=$(arg __ns)" name="timed_roslaunch_kinova_moveit_client" output="screen" /--> 
 

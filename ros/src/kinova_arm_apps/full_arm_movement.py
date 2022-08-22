@@ -214,7 +214,7 @@ class FullArmMovement:
             rospy.logerr("Failed to call SendGripperCommand")
 
     def close_gripper(self):
-        self.example_send_gripper_command(0.8)
+        self.example_send_gripper_command(0.5)
         rospy.sleep(2.0)
 
     def open_gripper(self):
