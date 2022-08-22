@@ -34,17 +34,27 @@ rosservice call /my_gen3/base/get_measured_cartesian_position "input: {}"
 ## For pick and place
 Connect arm with lan cable (will not work via wifi connection)
 ```
+roscore
 roslaunch kinova_arm_apps kinova_arm.launch
 roslaunch kinova_arm_apps closest_obj.launch
-
 roslaunch kinova_arm_apps pick_place.launch
-
-rostopic pub /pcl_closest_obj/event_in geometry_msgs/String e_start
 ```
+wait till the arm moves and stops and prints READY in cmd line
+
+```
+cd ros/scripts
+python3 perpetual_pick_place_demo.py
+```
+
+## Sending commands manually 
+Before running this close the **perpetial_pick_place_demo.py**
+
+```
+rostopic pub /pcl_closest_obj/event_in std_msgs/String e_start
 Check the output of `pick_place.launch`, if it says invalid pose, send `e_start`
 again. And, finally
 ```
-rostopic pub /pick_and_place/event_in geometry_msgs/String e_start
+rostopic pub /pick_and_place/event_in std_msgs/String e_start
 ```
 
 ## Using MoveIt! client
