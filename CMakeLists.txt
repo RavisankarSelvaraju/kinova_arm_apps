@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(kinova_arm_apps)
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 find_package(catkin REQUIRED COMPONENTS
   rospy
@@ -15,9 +15,10 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 # Compile as C++11 for ROS Kinetic and newer
-add_compile_options(-std=c++11
+add_compile_options(
+	#-std=c++11
   -O3
-  -march=native
+  #-march=native
 )
 
 
