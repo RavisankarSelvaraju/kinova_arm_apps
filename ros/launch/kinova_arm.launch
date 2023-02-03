@@ -1,14 +1,16 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="arm" default="gen3"/> <!-- gen3 is the only supported arm for now -->
-    <arg name="gripper" default="robotiq_2f_85"/> <!-- "robotiq_2f_85" is the only supported gripper for now, as well as no gripper ("") -->
+    <!--arg name="gripper" default="robotiq_2f_85"/ --> <!-- "robotiq_2f_85" is the only supported gripper for now, as well as no gripper ("") -->
+    <arg name="gripper" default=""/> <!-- "robotiq_2f_85" is the only supported gripper for now, as well as no gripper ("") -->
     <arg name="robot_name" default="my_$(arg arm)"/>
 
   <include file="$(find kortex_driver)/launch/kortex_driver.launch">
     <!-- Kortex API options -->
-    <arg name="ip_address" value="192.168.1.12"/>
+    <arg name="ip_address" value="192.168.1.10"/>
     <arg name="start_rviz" value="true"/>
     <arg name="start_moveit" value="false"/>
+    <arg name="gripper" value="$(arg gripper)"/>
   </include>
 
   <!-- Static transformations -->
@@ -17,6 +19,14 @@
       name="camera_link_tf_publisher"
       args="0.0 0.05639 -0.00305  3.1419 0 0 end_effector_link camera_link" />
 
+  <node pkg="tf2_ros"
+      type="static_transform_publisher"
+      name="freddy_base_footprint_tf_publisher"
+      args="0.0 0.0 0.7 0.785 -1.43 1.57 base_footprint base_middle" />
 
+  <node pkg="tf2_ros"
+      type="static_transform_publisher"
+      name="middle_link_tf_publisher"
+      args="0.0 0.0 0.0 0.09 0.0 0.0 base_middle base_link" />
 </launch>
 
