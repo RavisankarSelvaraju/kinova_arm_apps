@@ -12,6 +12,10 @@
     <arg name="start_moveit" value="false"/>
     <arg name="gripper" value="$(arg gripper)"/>
   </include>
+  
+  
+  <include file="$(find kinova_arm_apps)/ros/launch/closest_obj.launch">
+    </include>
 
   <!-- Static transformations -->
   <node pkg="tf2_ros"
