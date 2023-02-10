@@ -42,8 +42,11 @@ class PickAndPlace(object):
         msg = self.get_transformed_pose(msg, 'base_footprint')
         rospy.loginfo(msg.pose)
         roll, pitch, yaw = tf.transformations.euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
+        print ("Extract yaw ", yaw)
         q = list(tf.transformations.quaternion_from_euler(0, 0, yaw))
+        #q = list(tf.transformations.quaternion_from_euler(0, 0, 0))
         msg.pose.orientation = Quaternion(*q)
+
         rospy.loginfo(msg.pose)
         print(self.boundary_safety)
         print("x safety check pass " , self.boundary_safety["x_min"] < msg.pose.position.x < self.boundary_safety["x_max"])
@@ -52,9 +55,14 @@ class PickAndPlace(object):
         if self.boundary_safety["x_min"] < msg.pose.position.x < self.boundary_safety["x_max"] and \
                 self.boundary_safety["y_min"] < msg.pose.position.y < self.boundary_safety["y_max"] and \
                 self.boundary_safety["z_min"] < msg.pose.position.z < self.boundary_safety["z_max"]:
+
+            #Saving it back in base link
+            msg = self.get_transformed_pose(msg, 'base_link')
             self.perception_pose = msg
         else:
             rospy.logerr("Input pose out of bound")
+
+
 
     def event_in_cb(self, msg):
         print ("Received message ", msg.data)
@@ -93,6 +101,7 @@ class PickAndPlace(object):
             debug_pose.pose.position.z = self.perception_pose.pose.position.z + 0.01
             self.debug_pose_pub.publish(debug_pose)
             self.fam.send_cartesian_pose(debug_pose)
+            self.perception_pose = None
             '''
             self.fam.close_gripper()
             if msg.data == 'e_pick_right':
